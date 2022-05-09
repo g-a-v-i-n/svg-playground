@@ -1,3 +1,57 @@
+@import url('https://fonts.googleapis.com/css2?family=Source+Code+Pro&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+body {
+    @apply bg-[#111111] p-0
+}
+
+h1 {
+    @apply text-5xl font-black;
+}
+
+h2 {
+    @apply text-4xl font-bold;
+}
+
+h3 {
+    @apply text-3xl font-bold;
+}
+
+h4 {
+    @apply text-3xl font-bold;
+}
+
+h5 {
+    @apply text-2xl font-bold;
+}
+
+h6 {
+    @apply text-xl font-bold;
+}
+
+h7 {
+    @apply text-lg font-bold;
+}
+
+p {
+    @apply text-base;
+}
+
+caption {
+@apply text-sm font-bold opacity-50;
+}
+
+.glint-top {
+    box-shadow: inset 0 1px 0 0 rgb(255 255 255 / 25%);
+}
+
+.inner-gleam {
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 15%);
+}
+
+.CodeMirror-wrap pre {
+    word-break: break-word;
+}

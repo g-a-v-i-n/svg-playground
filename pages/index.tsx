@@ -1,86 +1,132 @@
-import type { NextPage } from 'next'
-import Head from 'next/head'
-import Image from 'next/image'
+import React, { useState } from "react";
+import { Container } from '../components/Container'
+import { xml } from '@codemirror/lang-xml';
+import { EditorView } from "@codemirror/view";
+import dynamic from 'next/dynamic'
 
-const Home: NextPage = () => {
-  return (
-    <div className="flex min-h-screen flex-col items-center justify-center py-2">
-      <Head>
-        <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
+import {darkTheme} from '../components/CodeMirror/darkTheme'
+import examples from '../examples/examples'
+import { ListCell } from '../components/ListCell'
+import prettier from 'prettier/standalone';
+import htmlParser from 'prettier/parser-html';
+import outdent from 'outdent'
+import * as Dialog from '@radix-ui/react-dialog';
 
-      <main className="flex w-full flex-1 flex-col items-center justify-center px-20 text-center">
-        <h1 className="text-6xl font-bold">
-          Welcome to{' '}
-          <a className="text-blue-600" href="https://nextjs.org">
-            Next.js!
-          </a>
-        </h1>
+const CodeMirror = dynamic(() => {
+    return import('@uiw/react-codemirror')
+}, {ssr: false})
 
-        <p className="mt-3 text-2xl">
-          Get started by editing{' '}
-          <code className="rounded-md bg-gray-100 p-3 font-mono text-lg">
-            pages/index.tsx
-          </code>
-        </p>
 
-        <div className="mt-6 flex max-w-4xl flex-wrap items-center justify-around sm:w-full">
-          <a
-            href="https://nextjs.org/docs"
-            className="mt-6 w-96 rounded-xl border p-6 text-left hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Documentation &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Find in-depth information about Next.js features and its API.
-            </p>
-          </a>
+type ExampleProps = {
+    title: string
+    description: string
+    author: string
+    svg: (topMatter:string) => string
+}
+function formatCode(example:ExampleProps) {
+    const {
+        title,
+        description,
+        author,
+        svg,
+    } = example
 
-          <a
-            href="https://nextjs.org/learn"
-            className="mt-6 w-96 rounded-xl border p-6 text-left hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Learn &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Learn about Next.js in an interactive course with quizzes!
-            </p>
-          </a>
+    const topMatter = outdent`
+    <!--
+    @title: ${title}
+    @author: ${author}
+    @description: ${description}
+    -->
+    `
 
-          <a
-            href="https://github.com/vercel/next.js/tree/canary/examples"
-            className="mt-6 w-96 rounded-xl border p-6 text-left hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Examples &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Discover and deploy boilerplate example Next.js projects.
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className="mt-6 w-96 rounded-xl border p-6 text-left hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Deploy &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
-
-      <footer className="flex h-24 w-full items-center justify-center border-t">
-        <a
-          className="flex items-center justify-center gap-2"
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <Image src="/vercel.svg" alt="Vercel Logo" width={72} height={16} />
-        </a>
-      </footer>
-    </div>
-  )
+    return prettier.format(
+        svg(topMatter), { parser: 'html',  plugins: [htmlParser] }
+    )
 }
 
-export default Home
+function formatExisting(code:string) {
+    return prettier.format(code, { parser: 'html',  plugins: [htmlParser] })
+}
+
+
+export default function Editor() {
+
+    const [colorMode, setColorMode] = useState('light')
+
+    const [exampleIndex, setExampleIndex] = useState(0)
+
+    const [code, setCode] = useState(formatCode(examples[0]))
+
+    return (
+        <Container>
+            <Dialog.Root>
+            <span className="flex h-screen flex-row-reverse">
+            <Dialog.Trigger>
+                Open
+            </Dialog.Trigger>
+                <div
+                    className="w-full h-full overflow-hidden"
+                    dangerouslySetInnerHTML={{ __html: code }}
+                />
+                <div className="relative w-full overflow-y-scroll">
+                    <CodeMirror
+                        className="w-full border-r border-r-[#333] pb-16"
+                        value={ code }
+                        height={ '100%' }
+                        theme={ colorMode === 'light' ? darkTheme : darkTheme }
+                        extensions={[
+                            xml(),
+                            EditorView.lineWrapping
+                        ]}
+                        onChange={ (value) => setCode(value) }
+                    />
+                    <span className="fixed w-full flex p-2 bg-[#111] bottom-0 border-t border-t-[#333]">
+                        <button 
+                            className="py-1 px-3 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-colors" 
+                            onClick={ () => setCode(formatExisting(code)) }>
+                                Format
+                        </button>
+                    </span>
+                </div>
+
+                <nav className="flex flex-col min-w-[256px] bg-[#111] border-r border-r-[#333]">
+                    <div className="py-4 px-4 flex w-full">
+                        <p className="flex w-full py-2 px-4 rounded-xl font-medium text-white font-monospace">
+                            SVG Playground
+                        </p>
+                    </div>
+
+                    <ol className="flex flex-col">
+                    {
+                        examples.map((example, index) => (
+                            <ListCell
+                                key={ `${index}` }
+                                isSelected={ index === exampleIndex }
+                                onClick={ () => {
+                                    setExampleIndex(index) 
+                                    setCode(formatCode(example))
+                                }}
+                            >
+                                { example.title }
+                            </ListCell>
+                        ))
+                    }
+                    </ol>
+                </nav>
+            </span>
+            
+                
+                <Dialog.Portal>
+                <Dialog.Overlay className="fixed top-0 left-0 w-full h-full bg-black/75" />
+                <Dialog.Content className="fixed w-[96vw] top-[50%] left-[50%] p-8 translate-x-[-50%] translate-y-[-50%] rounded-3xl bg-gray-900 max-h-xl max-w-2xl">
+                    <Dialog.Title className="text-white">Menu</Dialog.Title>
+                    <Dialog.Description>
+                    <div className="flex flex-col">sdsdfsdf</div>
+                    </Dialog.Description>
+                    <Dialog.Close />
+                </Dialog.Content>
+                </Dialog.Portal>
+            </Dialog.Root>
+        </Container>
+    )
+}
